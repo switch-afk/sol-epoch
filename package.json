@@ -1,0 +1,37 @@
+{
+  "name": "sol-epoch",
+  "version": "0.1.0",
+  "description": "See where Solana is in its current epoch, with progress and time left, from your terminal",
+  "bin": {
+    "sol-epoch": "bin/sol-epoch.js"
+  },
+  "main": "src/cli.js",
+  "files": [
+    "bin",
+    "src",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "solana",
+    "epoch",
+    "slot",
+    "cli",
+    "zero-dependency"
+  ],
+  "author": "Blue Brick",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/switch-afk/sol-epoch.git"
+  },
+  "bugs": {
+    "url": "https://github.com/switch-afk/sol-epoch/issues"
+  },
+  "homepage": "https://github.com/switch-afk/sol-epoch#readme"
+}
