@@ -23,6 +23,11 @@ function formatUtc(iso) {
   return `${iso.slice(0, 16).replace('T', ' ')} UTC`;
 }
 
+// compact puts the whole object on one line, for --watch --json (one object per line).
+function stringify(out, compact) {
+  return `${compact ? JSON.stringify(out) : JSON.stringify(out, null, 2)}\n`;
+}
+
 // info: { epoch, slot, slotIndex, slotsInEpoch, slotsRemaining, progress, blockHeight, host, estimate }
 // estimate: { slotTimeMs, windowSecs, secondsRemaining, endsAt } or null
 function formatHuman(info) {
@@ -49,22 +54,76 @@ function formatHuman(info) {
   return `${lines.join('\n')}\n`;
 }
 
-function formatJson(info) {
+function formatJson(info, { compact = false } = {}) {
   const estimate = info.estimate;
-  const out = {
-    epoch: info.epoch,
-    slot: info.slot,
-    slotIndex: info.slotIndex,
-    slotsInEpoch: info.slotsInEpoch,
-    slotsRemaining: info.slotsRemaining,
-    progress: info.progress,
-    slotTimeMs: estimate ? estimate.slotTimeMs : null,
-    secondsRemaining: estimate ? estimate.secondsRemaining : null,
-    endsAt: estimate ? estimate.endsAt : null,
-    blockHeight: info.blockHeight,
-    rpc: info.host,
-  };
-  return `${JSON.stringify(out, null, 2)}\n`;
+  return stringify(
+    {
+      epoch: info.epoch,
+      slot: info.slot,
+      slotIndex: info.slotIndex,
+      slotsInEpoch: info.slotsInEpoch,
+      slotsRemaining: info.slotsRemaining,
+      progress: info.progress,
+      slotTimeMs: estimate ? estimate.slotTimeMs : null,
+      secondsRemaining: estimate ? estimate.secondsRemaining : null,
+      endsAt: estimate ? estimate.endsAt : null,
+      blockHeight: info.blockHeight,
+      rpc: info.host,
+    },
+    compact
+  );
 }
 
-module.exports = { formatHuman, formatJson, formatDuration, formatUtc, withCommas };
+// result: describeEpoch(...) plus { host, estimate }, for a finished or upcoming epoch
+function formatLookupHuman(result) {
+  const lines = [
+    `Epoch      ${result.epoch} (${result.status})`,
+    `Slots      ${withCommas(result.slotsInEpoch)} (${withCommas(result.firstSlot)} to ${withCommas(result.lastSlot)})`,
+  ];
+
+  if (result.status === 'finished') {
+    lines.push(`Ended      ${withCommas(result.slotsSinceEnd)} slots ago`);
+  } else if (result.estimate) {
+    lines.push(
+      `Starts in  ~${formatDuration(result.estimate.secondsRemaining)} (${withCommas(result.slotsUntilStart)} slots)`
+    );
+    lines.push(`Starts at  ${formatUtc(result.estimate.endsAt)}`);
+  } else {
+    lines.push(`Starts in  ${withCommas(result.slotsUntilStart)} slots (time unknown)`);
+  }
+
+  lines.push(`Current    epoch ${result.currentEpoch} at slot ${withCommas(result.currentSlot)}`);
+  lines.push(`RPC        ${result.host}`);
+  return `${lines.join('\n')}\n`;
+}
+
+function formatLookupJson(result, { compact = false } = {}) {
+  const estimate = result.estimate;
+  return stringify(
+    {
+      epoch: result.epoch,
+      status: result.status,
+      firstSlot: result.firstSlot,
+      lastSlot: result.lastSlot,
+      slotsInEpoch: result.slotsInEpoch,
+      slotsSinceEnd: result.slotsSinceEnd,
+      slotsUntilStart: result.slotsUntilStart,
+      secondsUntilStart: estimate ? estimate.secondsRemaining : null,
+      startsAt: estimate ? estimate.endsAt : null,
+      currentEpoch: result.currentEpoch,
+      currentSlot: result.currentSlot,
+      rpc: result.host,
+    },
+    compact
+  );
+}
+
+module.exports = {
+  formatHuman,
+  formatJson,
+  formatLookupHuman,
+  formatLookupJson,
+  formatDuration,
+  formatUtc,
+  withCommas,
+};
